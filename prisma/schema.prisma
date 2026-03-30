@@ -1,0 +1,307 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ AUTH & USERS ============
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String?   @unique
+  password      String?
+  name          String
+  role          String    @default("user") // admin, manager, staff, user
+  avatar        String?
+  phone         String?
+  language      String    @default("en") // en, fi, ar
+  currency      String    @default("EUR")
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  companyUsers  CompanyUser[]
+  sessions      Session[]
+  chatMessages  ChatMessage[]
+  activityLogs  ActivityLog[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ============ COMPANIES ============
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  companyCode String   @unique
+  email       String?
+  phone       String?
+  address     String?
+  city        String?
+  country     String?
+  postalCode  String?
+  logo        String?
+  vatNumber   String?
+  website     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyUsers   CompanyUser[]
+  customers      Customer[]
+  invoices       Invoice[]
+  expenses       Expense[]
+  bookings       Booking[]
+  workOrders     WorkOrder[]
+  certificates   Certificate[]
+  incomes        Income[]
+}
+
+model CompanyUser {
+  id         String   @id @default(cuid())
+  userId     String
+  companyId  String
+  role       String   @default("staff") // owner, admin, manager, staff
+  joinedAt   DateTime @default(now())
+
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company  Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([companyId])
+}
+
+// ============ SUBSCRIPTIONS ============
+
+model Subscription {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  plan        String    @default("monthly") // monthly, yearly
+  status      String    @default("trial") // trial, active, cancelled, expired
+  startDate   DateTime  @default(now())
+  endDate     DateTime?
+  amount      Float     @default(0)
+  stripeId    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+}
+
+// ============ CUSTOMERS ============
+
+model Customer {
+  id         String   @id @default(cuid())
+  companyId  String
+  name       String
+  email      String?
+  phone      String?
+  address    String?
+  city       String?
+  country    String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoices     Invoice[]
+  bookings     Booking[]
+  workOrders   WorkOrder[]
+  incomes      Income[]
+  certificates Certificate[]
+
+  @@index([companyId])
+}
+
+// ============ INCOME ============
+
+model Income {
+  id          String    @id @default(cuid())
+  companyId   String
+  customerId  String?
+  category    String?
+  amount      Float
+  description String?
+  date        DateTime
+  referenceNo String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([date])
+}
+
+// ============ EXPENSES ============
+
+model Expense {
+  id          String    @id @default(cuid())
+  companyId   String
+  category    String?
+  amount      Float
+  description String?
+  date        DateTime
+  vendor      String?
+  referenceNo String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([date])
+}
+
+// ============ INVOICES ============
+
+model Invoice {
+  id          String    @id @default(cuid())
+  companyId   String
+  customerId  String
+  invoiceNo   String
+  status      String    @default("draft") // draft, sent, paid, overdue, cancelled
+  issueDate   DateTime
+  dueDate     DateTime
+  items       String    // JSON string of line items
+  subtotal    Float
+  taxRate     Float     @default(0)
+  taxAmount   Float     @default(0)
+  total       Float
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([customerId])
+  @@index([status])
+}
+
+// ============ BOOKINGS ============
+
+model Booking {
+  id          String    @id @default(cuid())
+  companyId   String
+  customerId  String
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  status      String    @default("pending") // pending, confirmed, in_progress, completed, cancelled
+  location    String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([startDate])
+  @@index([status])
+}
+
+// ============ WORK ORDERS ============
+
+model WorkOrder {
+  id          String    @id @default(cuid())
+  companyId   String
+  customerId  String?
+  title       String
+  description String?
+  priority    String    @default("medium") // low, medium, high, urgent
+  status      String    @default("open") // open, in_progress, completed, cancelled
+  assignedTo  String?
+  dueDate     DateTime?
+  completedAt DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([status])
+  @@index([priority])
+}
+
+// ============ MAINTENANCE CERTIFICATES ============
+
+model Certificate {
+  id           String    @id @default(cuid())
+  companyId    String
+  customerId   String?
+  title        String
+  description  String?
+  certificateNo String
+  issueDate    DateTime
+  expiryDate   DateTime?
+  status       String    @default("active") // active, expired, revoked
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([status])
+}
+
+// ============ CHAT ============
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String
+  isAdmin   Boolean  @default(false)
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============ ACTIVITY LOGS ============
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============ SYSTEM SETTINGS ============
+
+model SystemSettings {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}

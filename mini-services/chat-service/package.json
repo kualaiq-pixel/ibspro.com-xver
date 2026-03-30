@@ -1,0 +1,14 @@
+{
+  "name": "ibs-chat-service",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "bun server.cjs",
+    "start": "bun server.cjs"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
