@@ -100,9 +100,9 @@ export async function PUT(request: NextRequest) {
     const user = await db.user.update({
       where: { id: userId },
       data: {
-        ...(name && { name }),
-        ...(email && { email }),
-        ...(role && { role }),
+        ...(name !== undefined && { name }),
+        ...(email !== undefined && { email }),
+        ...(role !== undefined && { role }),
         ...(isActive !== undefined && { isActive }),
       },
     });

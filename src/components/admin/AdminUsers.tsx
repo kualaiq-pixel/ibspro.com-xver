@@ -388,17 +388,17 @@ export default function AdminUsers() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>{t('customers.name', locale)}</Label>
-              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+              <Label htmlFor="edit-user-name">{t('customers.name', locale)}</Label>
+              <Input id="edit-user-name" value={editName} onChange={(e) => setEditName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>{t('customers.email', locale)}</Label>
-              <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} type="email" />
+              <Label htmlFor="edit-user-email">{t('customers.email', locale)}</Label>
+              <Input id="edit-user-email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} type="email" />
             </div>
             <div className="space-y-2">
-              <Label>{t('admin.role', locale)}</Label>
+              <Label htmlFor="edit-user-role">{t('admin.role', locale)}</Label>
               <Select value={editRole} onValueChange={setEditRole}>
-                <SelectTrigger>
+                <SelectTrigger id="edit-user-role">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

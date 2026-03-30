@@ -104,11 +104,14 @@ export default function AdminChats() {
     return () => clearInterval(interval);
   }, [fetchConversations]);
 
-  // Fetch messages when a conversation is selected
+  // Fetch messages when a conversation is selected + poll for new messages
   useEffect(() => {
-    if (selectedUserId) {
+    if (!selectedUserId) return;
+    fetchMessages(selectedUserId);
+    const msgInterval = setInterval(() => {
       fetchMessages(selectedUserId);
-    }
+    }, 3000);
+    return () => clearInterval(msgInterval);
   }, [selectedUserId, fetchMessages]);
 
   // Auto-scroll messages
